@@ -154,43 +154,49 @@ V1_CERT = None
 
 # ---------------------------------------------------------------- v2
 
-def compute_v2_digests(content: bytes, cd: bytes, eocd: bytes):
-    """content = APK bytes before central dir (sections 1..3)."""
+def compute_v2_digests(content: bytes, cd: bytes, eocd_patched: bytes):
+    """AOSP V2SchemeSigner.computeContentDigests (SHA-256):
+    H(0x5a || u32le(chunkCount) || concat(H(0xa5 || u32le(len) || chunk)))
+    over the segments [content, central directory, patched EOCD].
+    Returns the digests field: lp( lp(alg || lp(digest)) )."""
+    segments = [content, cd, eocd_patched]
     chunk_digests = []
-    for i in range(0, len(content), CHUNK_SIZE):
-        chunk_digests.append(hashlib.sha256(content[i:i + CHUNK_SIZE]).digest())
-    if not chunk_digests:
-        chunk_digests = [hashlib.sha256(b"").digest()]
-    chunks_digest = hashlib.sha256(b"".join(chunk_digests)).digest()
-    cd_digest = hashlib.sha256(cd).digest()
-    eocd_digest = hashlib.sha256(eocd).digest()
-
-    digest_entries = []
-    for d in chunk_digests:
-        digest_entries.append(len_prefixed(u32(DIGEST_SHA256_CHUNKED) + len_prefixed(d)))
-    digest_entries.append(len_prefixed(u32(DIGEST_SHA256_CHUNKED) + len_prefixed(chunks_digest)))
-    digest_entries.append(len_prefixed(u32(DIGEST_SHA256_CHUNKED) + len_prefixed(cd_digest)))
-    digest_entries.append(len_prefixed(u32(DIGEST_SHA256_CHUNKED) + len_prefixed(eocd_digest)))
-    return len_prefixed(b"".join(digest_entries))
+    for seg in segments:
+        for i in range(0, len(seg), CHUNK_SIZE):
+            chunk = seg[i:i + CHUNK_SIZE]
+            chunk_digests.append(hashlib.sha256(b"\xa5" + u32(len(chunk)) + chunk).digest())
+    digest = hashlib.sha256(b"\x5a" + u32(len(chunk_digests)) + b"".join(chunk_digests)).digest()
+    # AOSP sequence encoding: u32(8+len) + u32(alg) + u32(len) + digest
+    return u32(8 + len(digest)) + u32(SIG_RSA_PKCS1_SHA256) + u32(len(digest)) + digest
 
 
 def build_v2_signer_block(cert_der: bytes, key, digests_block: bytes):
-    certs = len_prefixed(len_prefixed(cert_der))
-    attrs = len_prefixed(b"")  # no additional attributes
-    signed_data = digests_block + certs + attrs
+    # AOSP V2SchemeSigner.generateSignerBlock:
+    #   digests field  = concat of elements  u32(8+len)+u32(alg)+u32(len)+digest
+    #   certs field    = concat of elements  u32(len)+cert          (one cert)
+    #   attrs field    = empty
+    #   signed_data    = lp(digests_field) + lp(certs_field) + lp(attrs_field)
+    #   signatures field = concat of elements u32(8+len)+u32(alg)+u32(len)+sig
+    #   signer         = lp(signed_data) + lp(signatures) + lp(public key)
+    #   pair value     = lp( sequence of lp(signer) )
+    certs_field = len_prefixed(cert_der)
+    attrs_field = b""
+    signed_data = (
+        len_prefixed(digests_block) +
+        len_prefixed(certs_field) +
+        len_prefixed(attrs_field)
+    )
 
     signature = key.sign(signed_data, padding.PKCS1v15(), hashes.SHA256())
-    signatures_block = len_prefixed(
-        len_prefixed(u32(SIG_RSA_PKCS1_SHA256) + len_prefixed(signature)))
+    signatures_field = (
+        u32(8 + len(signature)) + u32(SIG_RSA_PKCS1_SHA256) +
+        u32(len(signature)) + signature
+    )
 
     public_key_der = key.public_key().public_bytes(
         serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
 
-    # Per AOSP's V2SchemeVerifier (what Android itself runs):
-    #   signer    = lp(signed_data) || lp(signatures) || lp(public key SPKI)
-    #   pair value = lp( sequence of lp(signer) )   ← double length prefix
-    # The public key IS length-prefixed (readLengthPrefixedByteArray in AOSP).
-    signer = len_prefixed(signed_data) + len_prefixed(signatures_block) + len_prefixed(public_key_der)
+    signer = len_prefixed(signed_data) + len_prefixed(signatures_field) + len_prefixed(public_key_der)
     return len_prefixed(len_prefixed(signer))
 
 
@@ -228,20 +234,19 @@ def sign_v2(unsigned: bytes, cert_der: bytes, key, with_v1: bool) -> bytes:
 
     content = unsigned[:cd_offset]
 
-    def assemble(patched_eocd: bytes) -> bytes:
-        digests_block = compute_v2_digests(content, cd, patched_eocd)
-        signer_block = build_v2_signer_block(cert_der, key, digests_block)
-        block = build_apk_signing_block(signer_block)
-        new_cd_offset = cd_offset + len(block)
-        patched = patched_eocd[:16] + struct.pack("<I", new_cd_offset) + patched_eocd[20:]
-        return content + block + cd + patched
+    # EOCD for DIGEST purposes: CD offset → start of the signing block
+    # (which begins at cd_offset). Per AOSP: "EoCD must be treated as
+    # though its Central Directory offset points to the start of APK
+    # Signing Block."
+    digest_eocd = eocd[:16] + struct.pack("<I", cd_offset) + eocd[20:]
 
-    # Pass 1: figure out the block size (all components are fixed-size).
-    probe = assemble(eocd)
-    block_len = len(probe) - len(content) - len(cd) - len(eocd)
-    # Pass 2: digest the properly patched EOCD and rebuild (same size).
-    eocd_patched = eocd[:16] + struct.pack("<I", cd_offset + block_len) + eocd[20:]
-    return assemble(eocd_patched)
+    digests_block = compute_v2_digests(content, cd, digest_eocd)
+    signer_block = build_v2_signer_block(cert_der, key, digests_block)
+    block = build_apk_signing_block(signer_block)
+
+    # EOCD stored in the FILE: CD offset → actual (shifted) central directory
+    file_eocd = eocd[:16] + struct.pack("<I", cd_offset + len(block)) + eocd[20:]
+    return content + block + cd + file_eocd
 
 
 # ---------------------------------------------------------------- verify
@@ -291,10 +296,9 @@ def verify_v2(path: str) -> bool:
     certs, _ = read_lp(sd, p)
     cert_der, _ = read_lp(certs, 0)
 
-    sig_entry, _ = read_lp(sigs, 0)          # [len][alg][len][sig]
-    inner, _ = read_lp(sig_entry, 0)         # [alg][len][sig]
-    sig_alg = struct.unpack("<I", inner[:4])[0]
-    sig_val, _ = read_lp(inner, 4)
+    sig_entry, _ = read_lp(sigs, 0)          # entry = [alg][len][sig]
+    sig_alg = struct.unpack("<I", sig_entry[:4])[0]
+    sig_val, _ = read_lp(sig_entry, 4)
 
     from cryptography.hazmat.primitives.asymmetric import padding as pad
     cert = x509.load_der_x509_certificate(cert_der)
@@ -304,30 +308,33 @@ def verify_v2(path: str) -> bool:
         print("VERIFY: RSA signature INVALID:", e)
         return False
 
-    # verify digests — sections 1..3 are the bytes BEFORE the signing block
+    # verify digest — AOSP scheme: ONE digest per algorithm over
+    # [content, CD, EOCD with CD offset patched to the signing block start]
     content = data[: block_start]
-    entries = []
+    eocd_bytes = bytearray(data[eocd_off: eocd_off + 22])
+    eocd_bytes[16:20] = struct.pack("<I", block_start)
+    segments = [content, data[cd_offset: eocd_off], bytes(eocd_bytes)]
+    chunk_digests = []
+    for seg in segments:
+        for i in range(0, len(seg), CHUNK_SIZE):
+            chunk = seg[i:i + CHUNK_SIZE]
+            chunk_digests.append(hashlib.sha256(b"\xa5" + u32(len(chunk)) + chunk).digest())
+    expect_digest = hashlib.sha256(
+        b"\x5a" + u32(len(chunk_digests)) + b"".join(chunk_digests)).digest()
+
+    got = None
     q = 0
     while q < len(digests):
         (n,) = struct.unpack("<I", digests[q: q + 4])
-        entries.append(digests[q + 4: q + 4 + n])
+        entry = digests[q + 4: q + 4 + n]
         q += 4 + n
-    chunk_count = len(entries) - 3
-    chunks = [content[i:i + CHUNK_SIZE] for i in range(0, len(content), CHUNK_SIZE)] or [b""]
-    for i in range(chunk_count):
-        expect = entries[i][8:] if len(entries[i]) > 8 else b""
-        if hashlib.sha256(chunks[i]).digest() != expect:
-            print("VERIFY: chunk digest mismatch", i); return False
-    chunks_digest = hashlib.sha256(b"".join(
-        hashlib.sha256(c).digest() for c in chunks)).digest()
-    if chunks_digest != entries[chunk_count][8:]:
-        print("VERIFY: chunks-of-digests mismatch"); return False
-    if hashlib.sha256(data[cd_offset: eocd_off]).digest() != entries[chunk_count + 1][8:]:
-        print("VERIFY: central dir digest mismatch"); return False
-    if hashlib.sha256(data[eocd_off:]).digest() != entries[chunk_count + 2][8:]:
-        print("VERIFY: eocd digest mismatch"); return False
-    print(f"VERIFY v2: OK — RSA-SHA256 signature valid over signed data, "
-          f"{chunk_count} chunk digest(s) + CD + EOCD verified, cert CN={cert.subject.rfc4514_string()}")
+        alg = struct.unpack("<I", entry[:4])[0]
+        if alg == SIG_RSA_PKCS1_SHA256:
+            got, _ = read_lp(entry, 4)
+    if got != expect_digest:
+        print("VERIFY: content digest mismatch"); return False
+    print(f"VERIFY v2: OK — RSA-SHA256 signature + AOSP content digest valid, "
+          f"cert CN={cert.subject.rfc4514_string()}")
     return True
 
 

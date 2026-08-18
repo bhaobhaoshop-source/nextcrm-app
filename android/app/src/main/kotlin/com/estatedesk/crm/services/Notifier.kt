@@ -21,6 +21,7 @@ object Notifier {
     const val CHANNEL_BACKUP = "backups"
 
     fun createChannels(ctx: Context) {
+        if (Build.VERSION.SDK_INT < 26) return
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val reminders = NotificationChannel(
             CHANNEL_REMINDERS,
@@ -37,6 +38,11 @@ object Notifier {
         nm.createNotificationChannel(reminders)
         nm.createNotificationChannel(backups)
     }
+
+    /** Notification.Builder with a channel on API 26+, legacy constructor below. */
+    private fun builder(ctx: Context, channel: String): Notification.Builder =
+        if (Build.VERSION.SDK_INT >= 26) Notification.Builder(ctx, channel)
+        else Notification.Builder(ctx)
 
     fun hasPermission(ctx: Context): Boolean =
         Build.VERSION.SDK_INT < 33 || ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
@@ -72,7 +78,7 @@ object Notifier {
                 .putExtra("task_id", task.id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val n = Notification.Builder(ctx, CHANNEL_REMINDERS)
+        val n = builder(ctx, CHANNEL_REMINDERS)
             .setSmallIcon(R.drawable.ic_notif)
             .setContentTitle(title)
             .setContentText(text)
@@ -94,7 +100,7 @@ object Notifier {
             Intent(ctx, HomeActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val n = Notification.Builder(ctx, CHANNEL_REMINDERS)
+        val n = builder(ctx, CHANNEL_REMINDERS)
             .setSmallIcon(R.drawable.ic_notif)
             .setContentTitle(ctx.getString(R.string.settings_test_notification))
             .setContentText(ctx.getString(R.string.home_followups_today))
@@ -112,7 +118,7 @@ object Notifier {
             Intent(ctx, HomeActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val n = Notification.Builder(ctx, CHANNEL_BACKUP)
+        val n = builder(ctx, CHANNEL_BACKUP)
             .setSmallIcon(R.drawable.ic_notif)
             .setContentTitle(ctx.getString(R.string.data_backup))
             .setContentText(ctx.getString(R.string.backup_what))

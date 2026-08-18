@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # EstateDesk — Android build pipeline (no Gradle).
-# Produces a signed, installable APK in dist/.
+# Produces a signed, installable APK in dist/, signed by Google's official
+# apksigner (v1+v2+v3), verified before it is published.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -20,6 +21,7 @@ AAPT2="$TC/aapt2"
 D8JAR="$TC/r8repo/buildtools/d8-master.jar"
 ANDROID_JAR="$TC/sdk/android-35/android.jar"
 KOTLIN_STDLIB="$TC/kotlinc/lib/kotlin-stdlib.jar"
+APKSIGNER="$ROOT/tools/apksigner.jar"
 
 if [ ! -x "$AAPT2" ]; then AAPT2="$(command -v aapt2 || true)"; fi
 if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
@@ -35,8 +37,10 @@ for f in "$KOTLINC" "$AAPT2" "$D8JAR" "$ANDROID_JAR" "$KOTLIN_STDLIB"; do
 done
 
 export PATH="$JAVA_HOME/bin:$PATH"
-VERSION_NAME="1.0.0"
-VERSION_CODE="1"
+VERSION_NAME="1.0.1"
+VERSION_CODE="3"
+MIN_SDK="21"
+TARGET_SDK="35"
 PKG="com.estatedesk.crm"
 
 echo "==> Clean"
@@ -53,7 +57,7 @@ FLATS=$(find "$BUILD/flat" -name '*.flat' | tr '\n' ' ')
   --manifest "$SRC/AndroidManifest.xml" \
   -R $FLATS \
   --java "$BUILD/gen" \
-  --min-sdk-version 26 --target-sdk-version 35 \
+  --min-sdk-version "$MIN_SDK" --target-sdk-version "$TARGET_SDK" \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
   --auto-add-overlay
 
@@ -73,21 +77,43 @@ echo "==> 5/6 Dex (d8)"
 "$PY" "$ROOT/build/jar_dir.py" "$BUILD/classes" "$BUILD/app.jar"
 mkdir -p "$BUILD/dex"
 java -cp "$D8JAR" com.android.tools.r8.D8 \
-  --min-api 26 --release --output "$BUILD/dex" \
+  --min-api "$MIN_SDK" --release --output "$BUILD/dex" \
   "$BUILD/app.jar" "$KOTLIN_STDLIB"
 
-echo "==> 6/6 Package + sign"
+echo "==> 6/6 Package + sign (official apksigner)"
 "$PY" "$ROOT/build/package_apk.py" "$BUILD/unsigned.apk" "$BUILD/dex" "$BUILD/with_dex.apk"
 
 mkdir -p "$KEYSTORE"
 if [ ! -f "$KEYSTORE/release.pem" ]; then
-  echo "==> Generating signing key (keystore/release.pem)"
+  echo "==> Generating signing key (keystore/release.pem) — keep this file!"
   "$PY" "$ROOT/build/sign_apk.py" genkey "$KEYSTORE/release.pem" "$KEYSTORE/release-cert.der" "EstateDesk"
 fi
-"$PY" "$ROOT/build/sign_apk.py" sign "$BUILD/with_dex.apk" \
-  "$KEYSTORE/release.pem" "$KEYSTORE/release-cert.der" \
-  "$BUILD/signed.apk" v1v2
-"$PY" "$ROOT/build/sign_apk.py" verify "$BUILD/signed.apk"
+if [ ! -f "$KEYSTORE/release.p12" ]; then
+  "$PY" - "$KEYSTORE" <<'PYEOF'
+import sys
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
+d = sys.argv[1]
+key = serialization.load_pem_private_key(open(f"{d}/release.pem", "rb").read(), password=None)
+cert = x509.load_der_x509_certificate(open(f"{d}/release-cert.der", "rb").read())
+p12 = pkcs12.serialize_key_and_certificates(
+    b"estatedesk", key, cert, None,
+    serialization.BestAvailableEncryption(b"estatedesk"))
+open(f"{d}/release.p12", "wb").write(p12)
+PYEOF
+fi
+
+java -jar "$APKSIGNER" sign \
+  --ks "$KEYSTORE/release.p12" --ks-pass pass:estatedesk --ks-key-alias estatedesk \
+  --out "$BUILD/signed.apk" "$BUILD/with_dex.apk"
+
+echo "==> Verify with the official apksigner (must print 'Verifies')"
+java -jar "$APKSIGNER" verify --verbose "$BUILD/signed.apk" | head -8
+
+# extra cross-checks with independent verifiers
+"$PY" "$ROOT/build/verify_apk_v2.py" "$BUILD/signed.apk" >/dev/null || {
+  echo "error: independent v2 verifier failed"; exit 1; }
 
 cp "$BUILD/signed.apk" "$DIST/EstateDesk-$VERSION_NAME.apk"
 echo ""

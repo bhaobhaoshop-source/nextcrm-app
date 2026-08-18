@@ -29,7 +29,9 @@ object ReminderScheduler {
 
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pi = reminderIntent(ctx, task.id, fireAt)
-        if (Build.VERSION.SDK_INT >= 31) {
+        if (Build.VERSION.SDK_INT < 23) {
+            am.setExact(AlarmManager.RTC_WAKEUP, fireAt, pi)
+        } else if (Build.VERSION.SDK_INT >= 31) {
             val canExact = am.canScheduleExactAlarms()
             try {
                 if (canExact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireAt, pi)
