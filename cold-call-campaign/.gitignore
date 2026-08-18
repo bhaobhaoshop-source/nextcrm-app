@@ -1,2 +1,4 @@
 # transient write-lock file only
 data/*.tmp
+data/incoming/
+data/*.bak

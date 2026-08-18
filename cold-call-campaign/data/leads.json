@@ -8,7 +8,7 @@
    "C": 0
   },
   "demo": true,
-  "note": "SAMPLE DATA — replace by running: python3 tools/clean_leads.py <your-file>"
+  "note": "SAMPLE DATA — drop your real file on the first screen to replace it"
  },
  "leads": [
   {

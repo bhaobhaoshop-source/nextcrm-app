@@ -1,5 +1,7 @@
 {
+ "source": "sample-messy-input.csv",
  "kept": 18,
+ "duplicates_merged": 1,
  "dropped": 1,
  "dropped_rows": [
   {

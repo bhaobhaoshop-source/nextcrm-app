@@ -414,6 +414,35 @@ function readBody(req) {
   });
 }
 
+/** Read a raw binary upload straight to disk (no multipart, no dependencies). */
+function readRawToFile(req, dest, limit = 120e6) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > limit) {
+        req.destroy();
+        reject(new Error("File too large (max 120 MB)"));
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on("error", reject);
+    req.on("end", () => {
+      try {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, Buffer.concat(chunks));
+        resolve(size);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+const ALLOWED_UPLOAD_EXT = new Set([".pdf", ".csv", ".tsv", ".xlsx", ".xlsm", ".txt"]);
+
 function publicLead(lead) {
   if (!lead) return null;
   return { ...lead, state: stateFor(lead.id) };
@@ -518,6 +547,71 @@ const server = http.createServer(async (req, res) => {
       });
       saveDB();
       return sendJSON(res, 200, { ok: true, stats: computeStats() });
+    }
+
+    if (p === "/api/upload" && req.method === "POST") {
+      const rawName = url.searchParams.get("name") || "upload.pdf";
+      const safe = path.basename(rawName).replace(/[^\w.\-() ]/g, "_").slice(-120);
+      const ext = path.extname(safe).toLowerCase();
+      if (!ALLOWED_UPLOAD_EXT.has(ext)) {
+        return sendJSON(res, 400, {
+          error: `Can't read "${ext || "that file type"}". Send a PDF, XLSX, CSV or TXT.`,
+        });
+      }
+      const incoming = path.join(DATA_DIR, "incoming");
+      const dest = path.join(incoming, safe);
+      let bytes;
+      try {
+        bytes = await readRawToFile(req, dest);
+      } catch (e) {
+        return sendJSON(res, 400, { error: e.message });
+      }
+      if (!bytes) return sendJSON(res, 400, { error: "Empty file received." });
+
+      // keep a copy of the current campaign before we swap the list out
+      if (fs.existsSync(DB_FILE)) {
+        fs.copyFileSync(DB_FILE, DB_FILE + "." + Date.now() + ".bak");
+      }
+
+      const { execFile } = require("child_process");
+      const script = path.join(ROOT, "tools", "clean_leads.py");
+      const out = await new Promise((resolve) =>
+        execFile("python3", [script, dest, "--out", LEADS_FILE,
+                             "--report", path.join(DATA_DIR, "clean-report.json")],
+          { cwd: ROOT, timeout: 300000, maxBuffer: 20e6 },
+          (err, stdout, stderr) => resolve({ err, stdout, stderr }))
+      );
+      if (out.err) {
+        return sendJSON(res, 500, {
+          error: "Could not read that file.",
+          detail: (out.stderr || out.stdout || String(out.err)).slice(-1500),
+        });
+      }
+
+      loadLeads();
+      let report = {};
+      try {
+        report = JSON.parse(fs.readFileSync(path.join(DATA_DIR, "clean-report.json"), "utf8"));
+      } catch {}
+
+      return sendJSON(res, 200, {
+        ok: true,
+        file: safe,
+        bytes,
+        log: out.stdout.trim(),
+        count: LEADS.length,
+        meta: LEADS_META,
+        dropped: report.dropped || 0,
+        duplicatesMerged: report.duplicates_merged || 0,
+        droppedSample: (report.dropped_rows || []).slice(0, 15),
+        preview: LEADS.slice(0, 12).map((l) => ({
+          id: l.id, owner_name: l.owner_name, phone: (l.phones || [])[0] || "",
+          extraPhones: (l.phones || []).length - 1,
+          property_type: l.property_type, size: l.size, price: l.price,
+          area: l.area, city: l.city, quality: l.quality, flags: l.flags,
+        })),
+        stats: computeStats(),
+      });
     }
 
     if (p === "/api/leads") {

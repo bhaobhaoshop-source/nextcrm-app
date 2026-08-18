@@ -40,7 +40,10 @@ async function boot() {
   BOOT = await api("/api/bootstrap");
   renderChips();
   renderHelpDispo();
-  if (BOOT.meta && BOOT.meta.demo) $("#demoBanner").classList.remove("hidden");
+  if (BOOT.meta && BOOT.meta.demo) {
+    $("#demoBanner").classList.remove("hidden");
+    $("#gateUpload").classList.remove("hidden");
+  }
   if (CALLER) enterApp();
 }
 
@@ -351,6 +354,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("#callerInput").value = "";
   };
   $$(".tab").forEach((t) => t.onclick = () => showView(t.dataset.view));
+  Uploader.wire();
 
   await boot();
 
@@ -389,3 +393,92 @@ document.addEventListener("DOMContentLoaded", async () => {
     sT = setTimeout(() => List.load(), 250);
   });
 });
+
+
+/* ================= UPLOADER ================= */
+const Uploader = {
+  busy: false,
+
+  wire() {
+    const dz = $("#dropZone"), fi = $("#fileInput");
+    if (!dz) return;
+    dz.onclick = () => fi.click();
+    fi.onchange = () => { if (fi.files[0]) this.send(fi.files[0]); };
+    ["dragenter", "dragover"].forEach((e) =>
+      dz.addEventListener(e, (ev) => { ev.preventDefault(); dz.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((e) =>
+      dz.addEventListener(e, (ev) => { ev.preventDefault(); dz.classList.remove("over"); }));
+    dz.addEventListener("drop", (ev) => {
+      const f = ev.dataTransfer?.files?.[0];
+      if (f) this.send(f);
+    });
+    // let the manager re-open the dropzone from the dashboard
+    const btn = $("#dashLoadBtn");
+    if (btn) btn.onclick = () => {
+      $("#app").classList.add("hidden");
+      $("#gate").classList.remove("hidden");
+      $("#gateUpload").classList.remove("hidden");
+      $("#gateUpload").scrollIntoView?.({ behavior: "smooth" });
+    };
+  },
+
+  status(msg, cls) {
+    const el = $("#dzStatus");
+    el.textContent = msg;
+    el.className = "dz-status" + (cls ? " " + cls : "");
+  },
+
+  async send(file) {
+    if (this.busy) return;
+    this.busy = true;
+    $("#dzResult").classList.add("hidden");
+    const mb = (file.size / 1048576).toFixed(1);
+    this.status(`Uploading ${file.name} (${mb} MB)… then reading it. Large PDFs can take a minute.`, "busy");
+    try {
+      const res = await fetch("/api/upload?name=" + encodeURIComponent(file.name),
+                              { method: "POST", body: file });
+      const r = await res.json();
+      if (r.error) {
+        this.status("❌ " + r.error, "bad");
+        if (r.detail) {
+          $("#dzResult").classList.remove("hidden");
+          $("#dzResult").innerHTML = `<h4>What went wrong</h4><pre style="white-space:pre-wrap;font-size:11px;color:#fca5a5">${esc(r.detail)}</pre>`;
+        }
+        return;
+      }
+      this.status(`✅ ${r.count} callable leads loaded from ${r.file}`, "good");
+      this.showResult(r);
+      BOOT.meta = r.meta || {};
+      $("#demoBanner").classList.add("hidden");
+      paintStats(r.stats);
+    } catch (e) {
+      this.status("❌ Upload failed: " + e.message, "bad");
+    } finally {
+      this.busy = false;
+    }
+  },
+
+  showResult(r) {
+    const qc = { A: "#166534", B: "#854d0e", C: "#7f1d1d" };
+    const box = $("#dzResult");
+    box.classList.remove("hidden");
+    box.innerHTML = `
+      <h4>First ${r.preview.length} leads — check these look right</h4>
+      <table class="dz-tbl">
+        <tr><th>#</th><th>Name</th><th>Phone</th><th>Property</th><th>Area</th><th>Grade</th></tr>
+        ${r.preview.map(p => `<tr>
+          <td>${esc(p.id)}</td>
+          <td>${esc(p.owner_name || "—")}</td>
+          <td>${esc(p.phone)}${p.extraPhones > 0 ? ` <span style="color:#6b7c9c">+${p.extraPhones}</span>` : ""}</td>
+          <td>${esc([p.size, p.property_type].filter(Boolean).join(" ") || "—")}</td>
+          <td>${esc(p.area || p.city || "—")}</td>
+          <td><span class="q" style="background:${qc[p.quality] || "#334155"};color:#fff">${esc(p.quality)}</span></td>
+        </tr>`).join("")}
+      </table>
+      ${r.duplicatesMerged ? `<div class="dz-drop-note" style="color:#93c5fd">🔁 ${r.duplicatesMerged} duplicate row(s) merged — the same person listed more than once is now a single lead.</div>` : ""}
+      ${r.dropped ? `<div class="dz-drop-note">⚠️ ${r.dropped} row(s) dropped — no phone number could be found in them (page headers, totals, blank rows). Full list in data/clean-report.json.</div>` : ""}
+      <div class="dz-actions">
+        <button class="btn btn-green" onclick="location.reload()">Looks right — START CALLING</button>
+      </div>`;
+  },
+};

@@ -8,6 +8,16 @@ happened. Everything is tracked automatically.
 
 ## ⚡ The 3 commands you will ever need
 
+### Easiest: drag the file into the browser
+
+Start the app (`node server.js`), open it, and **drop your PDF onto the box on
+the first screen**. It is parsed, cleaned and loaded in place — no terminal, no
+file paths. Use the **"Load a new list"** button on the Dashboard tab to do it
+again later. Your call history is backed up automatically before the list is
+swapped.
+
+### Or from the terminal
+
 ```bash
 # 1. Load your list — ANY of these work
 python3 tools/clean_leads.py /path/to/your-list.pdf     # a file (PDF / XLSX / CSV / TXT)

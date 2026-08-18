@@ -407,11 +407,16 @@ def build_leads(rows, pages, source_name):
 
     # ---- fallback: no tables, scan raw page text line by line
     if not records and pages:
+        rejected = []   # the table pass produced nothing; don't double-count its rejects
         for page in pages:
             for line in page.splitlines():
                 line = clean_text(line)
+                if not line:
+                    continue
                 phones = find_phones(line)
-                if not phones: continue
+                if not phones:
+                    rejected.append({"reason": "no phone number found", "text": line[:200]})
+                    continue
                 name = extract_name_from_line(line)
                 records.append({
                     "owner_name": name, "phones": phones,
@@ -507,14 +512,21 @@ def main():
                             "count": len(leads),
                             "quality": {q: sum(1 for l in leads if l["quality"] == q) for q in "ABC"}},
                    "leads": leads}, f, indent=1, ensure_ascii=False)
+    merged_dupes = sum(l.get("duplicate_count", 1) - 1 for l in leads)
     with open(a.report, "w", encoding="utf-8") as f:
-        json.dump({"kept": len(leads), "dropped": len(rejected), "dropped_rows": rejected[:400]},
+        json.dump({"source": src_name,
+                   "kept": len(leads),
+                   "duplicates_merged": merged_dupes,
+                   "dropped": len(rejected),
+                   "dropped_rows": rejected[:400]},
                   f, indent=1, ensure_ascii=False)
 
     print(f"✅ {len(leads)} callable leads  →  {a.out}")
     print(f"   A-grade {sum(1 for l in leads if l['quality']=='A')} | "
           f"B {sum(1 for l in leads if l['quality']=='B')} | "
           f"C {sum(1 for l in leads if l['quality']=='C')}")
+    if merged_dupes:
+        print(f"🔁 {merged_dupes} duplicate row(s) merged into existing leads")
     print(f"⚠️  {len(rejected)} rows dropped (no usable phone) → {a.report}")
 
 if __name__ == "__main__":

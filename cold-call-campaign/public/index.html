@@ -24,6 +24,18 @@
     <p class="gate-note">
       Pick your name if you see it. Otherwise type it once — we'll remember you.
     </p>
+
+    <div id="gateUpload" class="gate-upload hidden">
+      <div class="gu-divider"><span>MANAGER — LOAD THE REAL LIST</span></div>
+      <div id="dropZone" class="dropzone">
+        <div class="dz-icon">📄</div>
+        <div class="dz-title">Drag your PDF here</div>
+        <div class="dz-sub">or <b>click to choose a file</b> — PDF, Excel, CSV or TXT</div>
+        <input type="file" id="fileInput" accept=".pdf,.csv,.tsv,.xlsx,.xlsm,.txt" hidden />
+      </div>
+      <div id="dzStatus" class="dz-status"></div>
+      <div id="dzResult" class="dz-result hidden"></div>
+    </div>
   </div>
 </div>
 
@@ -174,6 +186,7 @@
     <div class="dash-actions">
       <a class="btn btn-blue" href="/api/export/leads.csv">⬇ Download Leads + Progress (Excel)</a>
       <a class="btn btn-grey" href="/api/export/calls.csv">⬇ Download Full Call Log (Excel)</a>
+      <button id="dashLoadBtn" class="btn btn-grey">📄 Load a new list</button>
     </div>
     <div id="dashCards" class="dash-cards"></div>
     <div class="dash-split">
