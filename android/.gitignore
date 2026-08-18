@@ -1,0 +1,4 @@
+# build outputs (intermediate)
+build/out/
+# signing identity — DO NOT COMMIT
+keystore/
