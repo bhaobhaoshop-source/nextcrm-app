@@ -9,8 +9,10 @@ happened. Everything is tracked automatically.
 ## ⚡ The 3 commands you will ever need
 
 ```bash
-# 1. Load your list (PDF, Excel, or CSV — whatever you have)
-python3 tools/clean_leads.py /path/to/your-list.pdf
+# 1. Load your list — ANY of these work
+python3 tools/clean_leads.py /path/to/your-list.pdf     # a file (PDF / XLSX / CSV / TXT)
+python3 tools/clean_leads.py "https://drive.google.com/file/d/..."   # a shared link
+pbpaste | python3 tools/clean_leads.py -                # text pasted from your clipboard
 
 # 2. Start the calling app  (then open the link it prints)
 node server.js
@@ -18,6 +20,9 @@ node server.js
 # 3. Get the manager's Excel report, any time
 python3 tools/export_excel.py
 ```
+
+Google Drive, Google Sheets and Dropbox share links are converted to
+direct downloads automatically — just paste the link you'd normally share.
 
 That's it. There is nothing to install and no database to set up.
 

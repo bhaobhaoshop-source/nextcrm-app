@@ -166,6 +166,9 @@ def guess_area(t):
     t = SIZE_RE.sub(" ", t)
     t = PRICE_RE.sub(" ", t)
     t = re.sub(r"\brs\.?\b|\bpkr\b", " ", t, flags=re.I)
+    for pat in PROP_WORDS:                      # drop "house", "plot", "shop"…
+        t = re.sub(pat, " ", t, flags=re.I)
+    t = re.sub(r"^[\s.\-–—:;|,]+", " ", t)      # leading punctuation
     best = ""
     for chunk in re.split(r"[|,;/]+", t):
         chunk = clean_text(chunk)
@@ -173,8 +176,8 @@ def guess_area(t):
         if not chunk or len(chunk) > 48:
             continue
         if any(h in cl for h in AREA_HINTS):
-            # trim leading numbering / stray words
-            chunk = re.sub(r"^\d+\s*", "", chunk).strip()
+            # trim leading numbering / stray punctuation
+            chunk = re.sub(r"^[\s\d.\-–—:;]+", "", chunk).strip()
             if chunk and (not best or len(chunk) < len(best)):
                 best = chunk
     if best:
@@ -188,6 +191,52 @@ def looks_like_name(s):
     if len(s) < 3 or len(s) > 45: return False
     if sum(ch.isdigit() for ch in s) > 2: return False
     return bool(re.search(r"[A-Za-z]{3}", s))
+
+
+# words that are never part of a person's name
+NOT_NAME_WORDS = set("""plot plots house kothi bungalow flat apartment apt shop shops office
+file files commercial farm land agricultural upper lower portion marla kanal sqft sq ft yd
+yards feet acre acres bigha crore cr lakh lac million mn arab rs pkr price demand rate
+phase sector block town society colony enclave garden valley heights park citi housing wapda
+johar model cantt scheme road street st contact mobile cell phone no number owner name
+islamabad rawalpindi lahore karachi peshawar multan faisalabad gujranwala sialkot quetta
+bahria dha gulberg askari ghauri centaurus saddar chaklala attock tenant rented vacant
+sale sell selling buy buyer urgent serious investor abroad""".split())
+
+HONORIFICS = {"mr","mrs","ms","miss","malik","sheikh","syed","mian","ch","chaudhry","chaudhary",
+              "hafiz","haji","dr","engr","raja","khawaja","mirza","agha","sardar","pir","qari"}
+
+
+def extract_name_from_line(line):
+    """For unstructured text: the name is almost always the words BEFORE the phone number."""
+    m = PHONE_RE.search(line)
+    head = line[:m.start()] if m else line
+    head = re.split(r"[|,;:\t]", head)[0]          # stop at the first separator
+    head = re.sub(r"^\s*\d+[\.\)]?\s*", "", head)  # drop leading "1." / "12)"
+    words, out = head.split(), []
+    for w in words:
+        bare = re.sub(r"[^\w]", "", w).lower()
+        if not bare:
+            continue
+        if any(ch.isdigit() for ch in bare):
+            break
+        if bare in NOT_NAME_WORDS:
+            break
+        out.append(w)
+        if len(out) >= 4:
+            break
+    # a lone honorific isn't a name
+    if len(out) == 1 and re.sub(r"[^\w]", "", out[0]).lower() in HONORIFICS:
+        return ""
+    cand = titlecase_name(" ".join(out))
+    return cand if looks_like_name(cand) else ""
+
+
+def strip_name(line, name):
+    """Remove the detected name so it doesn't leak into the area guess."""
+    if not name:
+        return line
+    return re.sub(re.escape(name), " ", line, flags=re.I)
 
 # --------------------------------------------------------------------------
 # Readers
@@ -240,6 +289,53 @@ def read_txt(path):
 READERS = {".pdf": read_pdf, ".csv": read_csv, ".tsv": read_csv,
            ".xlsx": read_xlsx, ".xlsm": read_xlsx, ".txt": read_txt}
 
+
+def fetch_to_temp(url):
+    """Download a shared link (Google Drive / Dropbox / any direct URL) to a temp file."""
+    import tempfile, urllib.request, urllib.parse
+
+    # rewrite common share links into direct-download form
+    if "drive.google.com" in url:
+        m = re.search(r"/d/([A-Za-z0-9_-]{10,})", url) or re.search(r"[?&]id=([A-Za-z0-9_-]{10,})", url)
+        if m:
+            url = f"https://drive.google.com/uc?export=download&id={m.group(1)}"
+    elif "dropbox.com" in url:
+        url = re.sub(r"[?&]dl=0", "", url) + ("&" if "?" in url else "?") + "dl=1"
+    elif "docs.google.com/spreadsheets" in url:
+        m = re.search(r"/d/([A-Za-z0-9_-]{10,})", url)
+        if m:
+            url = f"https://docs.google.com/spreadsheets/d/{m.group(1)}/export?format=xlsx"
+
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=90) as r:
+        blob = r.read()
+        ctype = (r.headers.get("Content-Type") or "").lower()
+        disp = r.headers.get("Content-Disposition") or ""
+
+    ext = ""
+    m = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)', disp)
+    if m:
+        ext = os.path.splitext(m.group(1))[1].lower()
+    if ext not in READERS:
+        ext = os.path.splitext(urllib.parse.urlparse(url).path)[1].lower()
+    if ext not in READERS:
+        ext = (".pdf" if "pdf" in ctype else
+               ".xlsx" if "sheet" in ctype or "excel" in ctype else
+               ".csv" if "csv" in ctype else "")
+    if ext not in READERS:
+        if blob[:4] == b"%PDF":
+            ext = ".pdf"
+        elif blob[:2] == b"PK":
+            ext = ".xlsx"
+        else:
+            ext = ".csv"
+
+    fd, path = tempfile.mkstemp(suffix=ext)
+    with os.fdopen(fd, "wb") as f:
+        f.write(blob)
+    print(f"⬇  downloaded {len(blob):,} bytes → {path}")
+    return path
+
 # --------------------------------------------------------------------------
 # Build
 # --------------------------------------------------------------------------
@@ -272,7 +368,13 @@ def build_leads(rows, pages, source_name):
         for c in cells:
             if find_phones(c): continue
             if looks_like_name(c) and not SIZE_RE.search(c) and not guess_price(c):
-                name = titlecase_name(c); break
+                cand = titlecase_name(c)
+                if cand and not all(re.sub(r"[^\w]", "", w).lower() in NOT_NAME_WORDS
+                                    for w in cand.split()):
+                    name = cand
+                    break
+        if not name:
+            name = extract_name_from_line(blob)
 
         rec = {
             "owner_name": name,
@@ -281,7 +383,7 @@ def build_leads(rows, pages, source_name):
             "size": guess_size(blob),
             "price": guess_price(blob),
             "city": guess_city(blob),
-            "area": guess_area(blob),
+            "area": guess_area(strip_name(blob, name)),
             "address": "",
             "source": source_name,
             "raw": blob[:500],
@@ -310,15 +412,12 @@ def build_leads(rows, pages, source_name):
                 line = clean_text(line)
                 phones = find_phones(line)
                 if not phones: continue
-                name = ""
-                stripped = PHONE_RE.sub(" ", line)
-                for chunk in re.split(r"[|,;\t]{1,}|\s{3,}", stripped):
-                    if looks_like_name(chunk): name = titlecase_name(chunk); break
+                name = extract_name_from_line(line)
                 records.append({
                     "owner_name": name, "phones": phones,
                     "property_type": guess_property(line), "size": guess_size(line),
                     "price": guess_price(line), "city": guess_city(line),
-                    "area": guess_area(line), "address": "",
+                    "area": guess_area(strip_name(line, name)), "address": "",
                     "source": source_name, "raw": line[:500],
                 })
 
@@ -372,21 +471,39 @@ def build_leads(rows, pages, source_name):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("input")
+    ap.add_argument("input", help="file path, a URL, or '-' to read pasted text from stdin")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "data", "leads.json"))
     ap.add_argument("--report", default=os.path.join(os.path.dirname(__file__), "..", "data", "clean-report.json"))
     a = ap.parse_args()
 
-    ext = os.path.splitext(a.input)[1].lower()
-    reader = READERS.get(ext)
-    if not reader: sys.exit(f"Don't know how to read {ext}. Supported: {', '.join(READERS)}")
+    src_name = os.path.basename(a.input)
+    inp = a.input
 
-    rows, pages = reader(a.input)
-    leads, rejected = build_leads(rows, pages, os.path.basename(a.input))
+    if inp == "-":
+        import tempfile
+        text = sys.stdin.read()
+        fd, inp = tempfile.mkstemp(suffix=".txt")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        src_name = "pasted-text"
+    elif inp.startswith(("http://", "https://")):
+        src_name = inp
+        inp = fetch_to_temp(inp)
+
+    if not os.path.exists(inp):
+        sys.exit(f"❌ File not found: {inp}")
+
+    ext = os.path.splitext(inp)[1].lower()
+    reader = READERS.get(ext)
+    if not reader:
+        sys.exit(f"Don't know how to read {ext}. Supported: {', '.join(READERS)}")
+
+    rows, pages = reader(inp)
+    leads, rejected = build_leads(rows, pages, src_name)
 
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
-        json.dump({"meta": {"source": os.path.basename(a.input),
+        json.dump({"meta": {"source": src_name,
                             "count": len(leads),
                             "quality": {q: sum(1 for l in leads if l["quality"] == q) for q in "ABC"}},
                    "leads": leads}, f, indent=1, ensure_ascii=False)

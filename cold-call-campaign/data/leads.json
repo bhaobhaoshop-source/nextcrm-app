@@ -1,6 +1,6 @@
 {
  "meta": {
-  "source": "demo_raw.csv",
+  "source": "sample-messy-input.csv",
   "count": 18,
   "quality": {
    "A": 16,
@@ -23,7 +23,7 @@
    "city": "Islamabad",
    "area": "Gulberg Greens",
    "address": "Gulberg Greens, Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "3 | Ahmed Raza | 03215558899 / 0512223344 | 1 kanal house | Gulberg Greens, Islamabad | Rs 4.5 crore | tenant living",
    "note_from_data": "tenant living",
    "extra": {
@@ -47,7 +47,7 @@
    "city": "Islamabad",
    "area": "B-17 Islamabad",
    "address": "B-17 Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "6 | Bilal Ahmad | 03331234567 | 7 marla | B-17 Islamabad | 1.35 crore | duplicate entry maybe",
    "note_from_data": "duplicate entry maybe",
    "extra": {
@@ -74,7 +74,7 @@
    "city": "Rawalpindi",
    "area": "Bahria Town Phase 7",
    "address": "Bahria Town Phase 7, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "1 | malik ASIF javed | 0301-4455667 | 10 marla house | Bahria Town Phase 7, Rawalpindi | 3.2 crore | wants to sell soon",
    "note_from_data": "wants to sell soon",
    "extra": {
@@ -98,7 +98,7 @@
    "city": "Islamabad",
    "area": "DHA Phase 2 Islamabad",
    "address": "DHA Phase 2 Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "2 | Mrs. Sadia Khan | +92 333 1122334 | 5 marla plot | DHA Phase 2 Islamabad | 95 lakh",
    "extra": {
     "Name": "Mrs. Sadia Khan",
@@ -121,7 +121,7 @@
    "city": "Islamabad",
    "area": "Bahria Enclave",
    "address": "Bahria Enclave, Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "8 | Nadia Perveen | 0321-7654321 | 1 kanal plot | Bahria Enclave, Islamabad | 2.75 crore | call after 6pm",
    "note_from_data": "call after 6pm",
    "extra": {
@@ -145,7 +145,7 @@
    "city": "Islamabad",
    "area": "Blue Area, Islamabad",
    "address": "Blue Area, Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "11 | Usman Ghani | +923009876543 | Office 800 sq ft | Blue Area, Islamabad | 2 crore | investor",
    "note_from_data": "investor",
    "extra": {
@@ -169,7 +169,7 @@
    "city": "Islamabad",
    "area": "Ghauri Town",
    "address": "Ghauri Town, Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "12 | Rukhsana Bibi | 0347-1112223 | 5 marla house | Ghauri Town, Islamabad | 85 lakh | needs urgent sale",
    "note_from_data": "needs urgent sale",
    "extra": {
@@ -193,7 +193,7 @@
    "city": "Lahore",
    "area": "Bedian Road, Lahore",
    "address": "Bedian Road, Lahore",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "13 | Kamran Akmal | 0303 4455661 | Farm house 4 kanal | Bedian Road, Lahore | 12 crore",
    "extra": {
     "Name": "Kamran Akmal",
@@ -216,7 +216,7 @@
    "city": "Karachi",
    "area": "Bahria Town Karachi",
    "address": "Bahria Town Karachi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "15 | Faisal Mahmood | 0322-8887776 | File 10 marla | Bahria Town Karachi | 45 lakh | file only",
    "note_from_data": "file only",
    "extra": {
@@ -240,7 +240,7 @@
    "city": "Lahore",
    "area": "Wapda Town",
    "address": "Wapda Town, Lahore",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "17 | Ayesha Siddiqui | 0335-6667778 | 8 marla house | Wapda Town, Lahore | 2.4 crore",
    "extra": {
     "Name": "Ayesha Siddiqui",
@@ -263,7 +263,7 @@
    "city": "Lahore",
    "area": "Model Town",
    "address": "Model Town, Lahore",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "18 | Junaid Iqbal | 0313-4445556 | 1 kanal | Model Town, Lahore | 8 crore | very serious",
    "note_from_data": "very serious",
    "extra": {
@@ -287,7 +287,7 @@
    "city": "Rawalpindi",
    "area": "Askari 14",
    "address": "Askari 14, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "4 | 0345 9988776 | Flat 2 bed | Askari 14, Rawalpindi | 1.1 crore | owner abroad",
    "note_from_data": "owner abroad",
    "extra": {
@@ -310,7 +310,7 @@
    "city": "Islamabad",
    "area": "Centaurus, Islamabad",
    "address": "Centaurus, Islamabad",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "14 | Zeeshan Ali | 0311-2223334 | Apartment 3 bed | Centaurus, Islamabad | 4.8 crore | rented out",
    "note_from_data": "rented out",
    "extra": {
@@ -334,7 +334,7 @@
    "city": "Rawalpindi",
    "area": "Commercial Market, Rawalpindi",
    "address": "Commercial Market, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "19 | Tahir Mehmood | 0342-3334445 | Shop | Commercial Market, Rawalpindi | 1.8 crore",
    "extra": {
     "Name": "Tahir Mehmood",
@@ -357,7 +357,7 @@
    "city": "Rawalpindi",
    "area": "Saddar, Rawalpindi",
    "address": "Saddar, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "5 | Sheikh Imran ul Haq | 0300-1234567 | Commercial shop 400 sq ft | Saddar, Rawalpindi | serious seller",
    "note_from_data": "serious seller",
    "extra": {
@@ -370,7 +370,7 @@
    "quality": "A"
   },
   {
-   "owner_name": "Attock",
+   "owner_name": "Agriculture",
    "phones": [
     "+92 345 1239876"
    ],
@@ -380,7 +380,7 @@
    "city": "Attock",
    "area": "Attock",
    "address": "Attock",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "20 | 03451239876 | Land 2 acres | Attock | agriculture",
    "note_from_data": "agriculture",
    "extra": {
@@ -402,7 +402,7 @@
    "city": "Rawalpindi",
    "area": "Satellite Town",
    "address": "Satellite Town, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "16 | Mr Shahid | 0300 5551112 | Upper portion | Satellite Town, Rawalpindi | tenant query",
    "note_from_data": "tenant query",
    "extra": {
@@ -425,7 +425,7 @@
    "city": "Rawalpindi",
    "area": "Chaklala Scheme 3",
    "address": "Chaklala Scheme 3, Rawalpindi",
-   "source": "demo_raw.csv",
+   "source": "sample-messy-input.csv",
    "raw": "9 | Hafiz Tariq Mehmood | 051-5551234 | House 12 marla | Chaklala Scheme 3, Rawalpindi | 5 crore | landline only",
    "note_from_data": "landline only",
    "extra": {
