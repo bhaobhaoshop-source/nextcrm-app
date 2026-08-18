@@ -1,0 +1,444 @@
+{
+ "meta": {
+  "source": "demo_raw.csv",
+  "count": 18,
+  "quality": {
+   "A": 16,
+   "B": 2,
+   "C": 0
+  },
+  "demo": true,
+  "note": "SAMPLE DATA — replace by running: python3 tools/clean_leads.py <your-file>"
+ },
+ "leads": [
+  {
+   "owner_name": "Ahmed Raza",
+   "phones": [
+    "+92 321 5558899",
+    "+92 51 2223344"
+   ],
+   "property_type": "House",
+   "size": "1 Kanal",
+   "price": "4.5 Crore",
+   "city": "Islamabad",
+   "area": "Gulberg Greens",
+   "address": "Gulberg Greens, Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "3 | Ahmed Raza | 03215558899 / 0512223344 | 1 kanal house | Gulberg Greens, Islamabad | Rs 4.5 crore | tenant living",
+   "note_from_data": "tenant living",
+   "extra": {
+    "Name": "Ahmed Raza",
+    "Property": "1 kanal house",
+    "Price": "Rs 4.5 crore"
+   },
+   "id": "L0001",
+   "score": 105,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Bilal Ahmad",
+   "phones": [
+    "+92 333 1234567"
+   ],
+   "property_type": "Plot",
+   "size": "7 Marla",
+   "price": "1.35 Crore",
+   "city": "Islamabad",
+   "area": "B-17 Islamabad",
+   "address": "B-17 Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "6 | Bilal Ahmad | 03331234567 | 7 marla | B-17 Islamabad | 1.35 crore | duplicate entry maybe",
+   "note_from_data": "duplicate entry maybe",
+   "extra": {
+    "Name": "Bilal Ahmad",
+    "Property": "7 marla",
+    "Price": "1.35 crore"
+   },
+   "duplicate_count": 2,
+   "id": "L0002",
+   "score": 100,
+   "flags": [
+    "APPEARED 2x IN THE LIST"
+   ],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Malik Asif Javed",
+   "phones": [
+    "+92 301 4455667"
+   ],
+   "property_type": "House",
+   "size": "10 Marla",
+   "price": "3.2 Crore",
+   "city": "Rawalpindi",
+   "area": "Bahria Town Phase 7",
+   "address": "Bahria Town Phase 7, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "1 | malik ASIF javed | 0301-4455667 | 10 marla house | Bahria Town Phase 7, Rawalpindi | 3.2 crore | wants to sell soon",
+   "note_from_data": "wants to sell soon",
+   "extra": {
+    "Name": "malik ASIF javed",
+    "Property": "10 marla house",
+    "Price": "3.2 crore"
+   },
+   "id": "L0003",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Mrs. Sadia Khan",
+   "phones": [
+    "+92 333 1122334"
+   ],
+   "property_type": "Plot",
+   "size": "5 Marla",
+   "price": "95 Lakh",
+   "city": "Islamabad",
+   "area": "DHA Phase 2 Islamabad",
+   "address": "DHA Phase 2 Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "2 | Mrs. Sadia Khan | +92 333 1122334 | 5 marla plot | DHA Phase 2 Islamabad | 95 lakh",
+   "extra": {
+    "Name": "Mrs. Sadia Khan",
+    "Property": "5 marla plot",
+    "Price": "95 lakh"
+   },
+   "id": "L0004",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Nadia Perveen",
+   "phones": [
+    "+92 321 7654321"
+   ],
+   "property_type": "Plot",
+   "size": "1 Kanal",
+   "price": "2.75 Crore",
+   "city": "Islamabad",
+   "area": "Bahria Enclave",
+   "address": "Bahria Enclave, Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "8 | Nadia Perveen | 0321-7654321 | 1 kanal plot | Bahria Enclave, Islamabad | 2.75 crore | call after 6pm",
+   "note_from_data": "call after 6pm",
+   "extra": {
+    "Name": "Nadia Perveen",
+    "Property": "1 kanal plot",
+    "Price": "2.75 crore"
+   },
+   "id": "L0005",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Usman Ghani",
+   "phones": [
+    "+92 300 9876543"
+   ],
+   "property_type": "Office",
+   "size": "800 sq ft",
+   "price": "2 Crore",
+   "city": "Islamabad",
+   "area": "Blue Area, Islamabad",
+   "address": "Blue Area, Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "11 | Usman Ghani | +923009876543 | Office 800 sq ft | Blue Area, Islamabad | 2 crore | investor",
+   "note_from_data": "investor",
+   "extra": {
+    "Name": "Usman Ghani",
+    "Property": "Office 800 sq ft",
+    "Price": "2 crore"
+   },
+   "id": "L0006",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Rukhsana Bibi",
+   "phones": [
+    "+92 347 1112223"
+   ],
+   "property_type": "House",
+   "size": "5 Marla",
+   "price": "85 Lakh",
+   "city": "Islamabad",
+   "area": "Ghauri Town",
+   "address": "Ghauri Town, Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "12 | Rukhsana Bibi | 0347-1112223 | 5 marla house | Ghauri Town, Islamabad | 85 lakh | needs urgent sale",
+   "note_from_data": "needs urgent sale",
+   "extra": {
+    "Name": "Rukhsana Bibi",
+    "Property": "5 marla house",
+    "Price": "85 lakh"
+   },
+   "id": "L0007",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Kamran Akmal",
+   "phones": [
+    "+92 303 4455661"
+   ],
+   "property_type": "Farm House",
+   "size": "4 Kanal",
+   "price": "12 Crore",
+   "city": "Lahore",
+   "area": "Bedian Road, Lahore",
+   "address": "Bedian Road, Lahore",
+   "source": "demo_raw.csv",
+   "raw": "13 | Kamran Akmal | 0303 4455661 | Farm house 4 kanal | Bedian Road, Lahore | 12 crore",
+   "extra": {
+    "Name": "Kamran Akmal",
+    "Property": "Farm house 4 kanal",
+    "Price": "12 crore"
+   },
+   "id": "L0008",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Faisal Mahmood",
+   "phones": [
+    "+92 322 8887776"
+   ],
+   "property_type": "File",
+   "size": "10 Marla",
+   "price": "45 Lakh",
+   "city": "Karachi",
+   "area": "Bahria Town Karachi",
+   "address": "Bahria Town Karachi",
+   "source": "demo_raw.csv",
+   "raw": "15 | Faisal Mahmood | 0322-8887776 | File 10 marla | Bahria Town Karachi | 45 lakh | file only",
+   "note_from_data": "file only",
+   "extra": {
+    "Name": "Faisal Mahmood",
+    "Property": "File 10 marla",
+    "Price": "45 lakh"
+   },
+   "id": "L0009",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Ayesha Siddiqui",
+   "phones": [
+    "+92 335 6667778"
+   ],
+   "property_type": "House",
+   "size": "8 Marla",
+   "price": "2.4 Crore",
+   "city": "Lahore",
+   "area": "Wapda Town",
+   "address": "Wapda Town, Lahore",
+   "source": "demo_raw.csv",
+   "raw": "17 | Ayesha Siddiqui | 0335-6667778 | 8 marla house | Wapda Town, Lahore | 2.4 crore",
+   "extra": {
+    "Name": "Ayesha Siddiqui",
+    "Property": "8 marla house",
+    "Price": "2.4 crore"
+   },
+   "id": "L0010",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Junaid Iqbal",
+   "phones": [
+    "+92 313 4445556"
+   ],
+   "property_type": "",
+   "size": "1 Kanal",
+   "price": "8 Crore",
+   "city": "Lahore",
+   "area": "Model Town",
+   "address": "Model Town, Lahore",
+   "source": "demo_raw.csv",
+   "raw": "18 | Junaid Iqbal | 0313-4445556 | 1 kanal | Model Town, Lahore | 8 crore | very serious",
+   "note_from_data": "very serious",
+   "extra": {
+    "Name": "Junaid Iqbal",
+    "Property": "1 kanal",
+    "Price": "8 crore"
+   },
+   "id": "L0011",
+   "score": 95,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Flat 2 Bed",
+   "phones": [
+    "+92 345 9988776"
+   ],
+   "property_type": "Apartment",
+   "size": "",
+   "price": "1.1 Crore",
+   "city": "Rawalpindi",
+   "area": "Askari 14",
+   "address": "Askari 14, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "4 | 0345 9988776 | Flat 2 bed | Askari 14, Rawalpindi | 1.1 crore | owner abroad",
+   "note_from_data": "owner abroad",
+   "extra": {
+    "Property": "Flat 2 bed",
+    "Price": "1.1 crore"
+   },
+   "id": "L0012",
+   "score": 85,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Zeeshan Ali",
+   "phones": [
+    "+92 311 2223334"
+   ],
+   "property_type": "Apartment",
+   "size": "",
+   "price": "4.8 Crore",
+   "city": "Islamabad",
+   "area": "Centaurus, Islamabad",
+   "address": "Centaurus, Islamabad",
+   "source": "demo_raw.csv",
+   "raw": "14 | Zeeshan Ali | 0311-2223334 | Apartment 3 bed | Centaurus, Islamabad | 4.8 crore | rented out",
+   "note_from_data": "rented out",
+   "extra": {
+    "Name": "Zeeshan Ali",
+    "Property": "Apartment 3 bed",
+    "Price": "4.8 crore"
+   },
+   "id": "L0013",
+   "score": 85,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Tahir Mehmood",
+   "phones": [
+    "+92 342 3334445"
+   ],
+   "property_type": "Shop",
+   "size": "",
+   "price": "1.8 Crore",
+   "city": "Rawalpindi",
+   "area": "Commercial Market, Rawalpindi",
+   "address": "Commercial Market, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "19 | Tahir Mehmood | 0342-3334445 | Shop | Commercial Market, Rawalpindi | 1.8 crore",
+   "extra": {
+    "Name": "Tahir Mehmood",
+    "Property": "Shop",
+    "Price": "1.8 crore"
+   },
+   "id": "L0014",
+   "score": 85,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Sheikh Imran ul Haq",
+   "phones": [
+    "+92 300 1234567"
+   ],
+   "property_type": "Shop",
+   "size": "400 sq ft",
+   "price": "",
+   "city": "Rawalpindi",
+   "area": "Saddar, Rawalpindi",
+   "address": "Saddar, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "5 | Sheikh Imran ul Haq | 0300-1234567 | Commercial shop 400 sq ft | Saddar, Rawalpindi | serious seller",
+   "note_from_data": "serious seller",
+   "extra": {
+    "Name": "Sheikh Imran ul Haq",
+    "Property": "Commercial shop 400 sq ft"
+   },
+   "id": "L0015",
+   "score": 80,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Attock",
+   "phones": [
+    "+92 345 1239876"
+   ],
+   "property_type": "Land",
+   "size": "2 acres",
+   "price": "",
+   "city": "Attock",
+   "area": "Attock",
+   "address": "Attock",
+   "source": "demo_raw.csv",
+   "raw": "20 | 03451239876 | Land 2 acres | Attock | agriculture",
+   "note_from_data": "agriculture",
+   "extra": {
+    "Property": "Land 2 acres"
+   },
+   "id": "L0016",
+   "score": 80,
+   "flags": [],
+   "quality": "A"
+  },
+  {
+   "owner_name": "Mr Shahid",
+   "phones": [
+    "+92 300 5551112"
+   ],
+   "property_type": "Portion",
+   "size": "",
+   "price": "",
+   "city": "Rawalpindi",
+   "area": "Satellite Town",
+   "address": "Satellite Town, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "16 | Mr Shahid | 0300 5551112 | Upper portion | Satellite Town, Rawalpindi | tenant query",
+   "note_from_data": "tenant query",
+   "extra": {
+    "Name": "Mr Shahid",
+    "Property": "Upper portion"
+   },
+   "id": "L0017",
+   "score": 70,
+   "flags": [],
+   "quality": "B"
+  },
+  {
+   "owner_name": "Hafiz Tariq Mehmood",
+   "phones": [
+    "+92 51 5551234"
+   ],
+   "property_type": "House",
+   "size": "12 Marla",
+   "price": "5 Crore",
+   "city": "Rawalpindi",
+   "area": "Chaklala Scheme 3",
+   "address": "Chaklala Scheme 3, Rawalpindi",
+   "source": "demo_raw.csv",
+   "raw": "9 | Hafiz Tariq Mehmood | 051-5551234 | House 12 marla | Chaklala Scheme 3, Rawalpindi | 5 crore | landline only",
+   "note_from_data": "landline only",
+   "extra": {
+    "Name": "Hafiz Tariq Mehmood",
+    "Property": "House 12 marla",
+    "Price": "5 crore"
+   },
+   "id": "L0018",
+   "score": 65,
+   "flags": [
+    "LANDLINE ONLY"
+   ],
+   "quality": "B"
+  }
+ ]
+}

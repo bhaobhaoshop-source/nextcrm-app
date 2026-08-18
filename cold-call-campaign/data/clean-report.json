@@ -1,0 +1,10 @@
+{
+ "kept": 18,
+ "dropped": 1,
+ "dropped_rows": [
+  {
+   "reason": "no phone number found",
+   "text": "10 | N/A | not available | plot | junk row"
+  }
+ ]
+}

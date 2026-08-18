@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cold Call Command Center</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>" />
+</head>
+<body>
+
+<!-- ============ STEP 1: WHO ARE YOU ============ -->
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <div class="gate-icon">📞</div>
+    <h1>Cold Call Command Center</h1>
+    <p class="gate-sub">Before you start — who is calling today?</p>
+
+    <div id="callerChips" class="chips"></div>
+
+    <input id="callerInput" class="big-input" placeholder="Type your name here…" autocomplete="off" />
+    <button id="startBtn" class="btn btn-huge btn-green">START CALLING →</button>
+
+    <p class="gate-note">
+      Pick your name if you see it. Otherwise type it once — we'll remember you.
+    </p>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app" class="app hidden">
+
+  <header class="topbar">
+    <div class="brand">📞 <span>Command Center</span></div>
+    <nav class="tabs">
+      <button class="tab active" data-view="call">Call Now</button>
+      <button class="tab" data-view="list">All Leads</button>
+      <button class="tab" data-view="dash">Dashboard</button>
+      <button class="tab" data-view="help">How To</button>
+    </nav>
+    <div class="who">
+      <span id="whoName"></span>
+      <button id="switchUser" class="btn-link">switch</button>
+    </div>
+  </header>
+
+  <div id="demoBanner" class="demo-banner hidden">
+    ⚠️ <b>THIS IS SAMPLE DATA — DO NOT CALL THESE NUMBERS.</b>
+    <span>Load your real list with:</span> <code>python3 tools/clean_leads.py your-file.pdf</code>
+  </div>
+
+  <div id="progressStrip" class="progress-strip">
+    <div class="ps-item"><b id="psToday">0</b><span>your calls today</span></div>
+    <div class="ps-item"><b id="psRemaining">0</b><span>leads left</span></div>
+    <div class="ps-item hot"><b id="psHot">0</b><span>hot leads 🔥</span></div>
+    <div class="ps-item"><b id="psCallbacks">0</b><span>callbacks due</span></div>
+    <div class="ps-bar"><div id="psBarFill" class="ps-bar-fill"></div></div>
+  </div>
+
+  <!-- ---------- VIEW: CALL ---------- -->
+  <main id="view-call" class="view">
+    <div id="emptyState" class="empty hidden">
+      <div class="empty-icon">🎉</div>
+      <h2>No leads waiting right now!</h2>
+      <p id="emptyMsg">Everyone in the list has been called. Check the Dashboard for your results.</p>
+      <button class="btn btn-blue" onclick="Dialer.loadNext()">Check again</button>
+    </div>
+
+    <div id="callCard" class="call-wrap">
+
+      <!-- LEFT: who to call -->
+      <section class="panel panel-lead">
+        <div class="step-badge">STEP 1 — Call this person</div>
+
+        <div class="lead-head">
+          <div>
+            <div class="lead-name" id="leadName">—</div>
+            <div class="lead-sub" id="leadSub">—</div>
+          </div>
+          <div class="lead-id" id="leadId"></div>
+        </div>
+
+        <div id="leadFlags" class="flags"></div>
+
+        <div class="phone-block">
+          <div class="phone-label">DIAL THIS NUMBER</div>
+          <a id="phoneMain" class="phone-number" href="#">—</a>
+          <div class="phone-actions">
+            <a id="callBtn" class="btn btn-huge btn-green" href="#">📞 CALL NOW</a>
+            <button id="copyBtn" class="btn btn-grey" title="Copy number">📋 Copy</button>
+            <a id="waBtn" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
+          </div>
+          <div id="otherPhones" class="other-phones"></div>
+        </div>
+
+        <div class="detail-grid" id="detailGrid"></div>
+
+        <div id="historyBox" class="history hidden">
+          <div class="history-title">⏱ What happened last time</div>
+          <div id="historyList"></div>
+        </div>
+      </section>
+
+      <!-- MIDDLE: what to say -->
+      <section class="panel panel-script">
+        <div class="step-badge">STEP 2 — Say exactly this</div>
+
+        <div class="script-toggle">
+          <button class="stog active" data-lang="ur">Roman Urdu</button>
+          <button class="stog" data-lang="en">English</button>
+        </div>
+
+        <div id="scriptBody" class="script-body"></div>
+
+        <details class="objections">
+          <summary>😰 They pushed back — what do I say?</summary>
+          <div id="objectionBody"></div>
+        </details>
+      </section>
+
+      <!-- RIGHT: log the result -->
+      <section class="panel panel-log">
+        <div class="step-badge">STEP 3 — What happened?</div>
+        <p class="log-hint">Tap one button. That's it. We save it and load the next person.</p>
+
+        <div class="dispo-grid" id="dispoGrid"></div>
+
+        <div id="followup" class="followup hidden">
+          <label class="fu-label">Are they buying or selling?</label>
+          <div class="intent-row" id="intentRow">
+            <button class="intent" data-intent="SELL">Wants to SELL</button>
+            <button class="intent" data-intent="BUY">Wants to BUY</button>
+            <button class="intent" data-intent="BOTH">Both</button>
+          </div>
+
+          <label class="fu-label" id="cbLabel">When should we call back?</label>
+          <div class="cb-row" id="cbRow">
+            <button class="cb" data-mins="60">In 1 hour</button>
+            <button class="cb" data-mins="180">In 3 hours</button>
+            <button class="cb" data-mins="1440">Tomorrow</button>
+            <button class="cb" data-mins="4320">In 3 days</button>
+          </div>
+          <input type="datetime-local" id="cbExact" class="cb-exact" />
+        </div>
+
+        <label class="fu-label">Notes (optional — anything they said)</label>
+        <textarea id="notes" class="notes" rows="4"
+          placeholder="e.g. Owns 10 marla in Bahria Phase 7. Wants 3.2 crore. Call after Maghrib."></textarea>
+
+        <button id="saveBtn" class="btn btn-huge btn-blue" disabled>SAVE &amp; NEXT LEAD →</button>
+        <button id="skipBtn" class="btn btn-ghost">Skip this one for now</button>
+      </section>
+    </div>
+  </main>
+
+  <!-- ---------- VIEW: LIST ---------- -->
+  <main id="view-list" class="view hidden">
+    <div class="list-controls">
+      <input id="searchBox" class="big-input" placeholder="🔎 Search name, phone, area, anything…" />
+      <div class="filters">
+        <button class="filt active" data-filter="all">All</button>
+        <button class="filt" data-filter="untouched">Not called yet</button>
+        <button class="filt" data-filter="callback">Callbacks</button>
+        <button class="filt" data-filter="hot">🔥 Hot</button>
+        <button class="filt" data-filter="done">Finished</button>
+      </div>
+    </div>
+    <div id="listCount" class="list-count"></div>
+    <div class="table-wrap"><table id="leadTable" class="lead-table"></table></div>
+  </main>
+
+  <!-- ---------- VIEW: DASHBOARD ---------- -->
+  <main id="view-dash" class="view hidden">
+    <div class="dash-actions">
+      <a class="btn btn-blue" href="/api/export/leads.csv">⬇ Download Leads + Progress (Excel)</a>
+      <a class="btn btn-grey" href="/api/export/calls.csv">⬇ Download Full Call Log (Excel)</a>
+    </div>
+    <div id="dashCards" class="dash-cards"></div>
+    <div class="dash-split">
+      <div class="panel">
+        <h3>Team scoreboard — today</h3>
+        <table id="teamTable" class="lead-table"></table>
+      </div>
+      <div class="panel">
+        <h3>Where the list stands</h3>
+        <div id="dispoBars"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Latest 100 calls</h3>
+      <div class="table-wrap"><table id="recentTable" class="lead-table"></table></div>
+    </div>
+  </main>
+
+  <!-- ---------- VIEW: HELP ---------- -->
+  <main id="view-help" class="view hidden">
+    <div class="panel help">
+      <h2>How to use this — 60 second version</h2>
+      <ol class="help-steps">
+        <li><b>Type your name</b> on the first screen and hit START CALLING.</li>
+        <li>The screen shows you <b>ONE person</b>. Nobody else on your team gets this
+            person at the same time, so you can't double-call anyone.</li>
+        <li>Hit the big green <b>CALL NOW</b> button (or dial the number shown).</li>
+        <li>Read the <b>middle panel out loud</b>. It's written word-for-word. You do not
+            need to invent anything.</li>
+        <li>When the call ends, tap <b>one</b> of the coloured buttons on the right that
+            matches what happened.</li>
+        <li>Hit <b>SAVE &amp; NEXT LEAD</b>. A new person appears. Repeat.</li>
+      </ol>
+
+      <h3>What the buttons mean</h3>
+      <div id="helpDispo" class="help-dispo"></div>
+
+      <h3>Rules that keep us out of trouble</h3>
+      <ul class="help-rules">
+        <li><b>Call between 11:00 and 20:00 only.</b> Never before 10am, never after 9pm.</li>
+        <li>If they say <i>"don't call me again"</i> — tap <b>Do Not Call Again</b>. Never
+            dial them again. This matters legally.</li>
+        <li>Never argue. Never lie about a property. Never promise a price.</li>
+        <li>If they're angry, say: <i>"Bilkul, main abhi aapka number list se nikaal deta hoon.
+            Maazrat."</i> Then tap Do Not Call Again.</li>
+        <li>The system retries No Answer automatically. Don't redial manually 10 times.</li>
+      </ul>
+
+      <h3>Where's my data?</h3>
+      <p>Everything saves automatically to the server the second you tap SAVE. The manager can
+      download the whole thing as an Excel file from the <b>Dashboard</b> tab at any time.</p>
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/scripts.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

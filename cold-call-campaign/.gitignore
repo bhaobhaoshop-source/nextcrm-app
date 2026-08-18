@@ -1,0 +1,2 @@
+# transient write-lock file only
+data/*.tmp
