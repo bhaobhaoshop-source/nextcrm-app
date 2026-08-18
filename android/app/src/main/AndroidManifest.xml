@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.estatedesk.crm"
+    android:versionCode="1"
+    android:versionName="1.0.0">
+
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35"/>
+
+    <!-- Local reminders -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Calling (requested at runtime; ACTION_DIAL used as fallback) -->
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <!-- Camera for property photos (runtime permission; SAF picker is the default) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Optional cloud sync / links (whatsapp deep links, future sync) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
+    <queries>
+        <package android:name="com.whatsapp"/>
+        <package android:name="com.whatsapp.w4b"/>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+
+    <application
+        android:name=".App"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EstateDesk">
+
+        <provider
+            android:name=".core.FilesProvider"
+            android:authorities="com.estatedesk.crm.files"
+            android:exported="false"
+            android:grantUriPermissions="true"/>
+
+        <activity android:name=".ui.screens.HomeActivity" android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.screens.ContactsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.ContactFormActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.ContactDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.LeadsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.LeadFormActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.LeadDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.PropertiesActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.PropertyFormActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.PropertyDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.DealsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.DealFormActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.DealDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.TasksActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.TaskFormActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.FollowUpTodayActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.SearchActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.AnalyticsActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.FinancesActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.ComparisonActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.SettingsActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.ProfileSettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.AppearanceSettingsActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.NotificationSettingsActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.AppLockSettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.PipelineStagesActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.PicklistSettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.CustomFieldsSettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.CurrencySettingsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.DataSettingsActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.ImportWizardActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.screens.ExportActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.BackupActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.RecycleBinActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.AboutActivity" android:exported="false"/>
+        <activity android:name=".ui.screens.LockActivity" android:exported="false"
+            android:excludeFromRecents="true" android:launchMode="singleTask"
+            android:theme="@style/Theme.EstateDesk"/>
+
+        <receiver android:name=".receivers.ReminderReceiver" android:exported="false"/>
+        <receiver android:name=".receivers.TaskActionReceiver" android:exported="false"/>
+        <receiver android:name=".receivers.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -1,0 +1,6 @@
+# build outputs
+build/out/
+dist/*.apk
+# signing identity — DO NOT COMMIT
+keystore/
+# toolchain is external (/opt/toolchain)

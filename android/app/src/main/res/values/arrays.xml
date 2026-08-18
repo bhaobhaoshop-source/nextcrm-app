@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="classifications">
+        <item>Buyer</item><item>Seller</item><item>Investor</item><item>Renter</item><item>Landlord</item>
+    </string-array>
+    <string-array name="lead_statuses">
+        <item>New</item><item>Contacted</item><item>Qualified</item><item>Unqualified</item><item>Customer</item>
+    </string-array>
+    <string-array name="temperatures">
+        <item>Hot</item><item>Warm</item><item>Cold</item>
+    </string-array>
+    <string-array name="sale_rent">
+        <item>Sale</item><item>Rent</item>
+    </string-array>
+    <string-array name="listing_statuses">
+        <item>Available</item><item>Reserved</item><item>Sold</item><item>Rented</item><item>Off Market</item><item>Pending</item>
+    </string-array>
+    <string-array name="conditions">
+        <item>New</item><item>Excellent</item><item>Good</item><item>Needs Work</item>
+    </string-array>
+    <string-array name="task_kinds">
+        <item>Task</item><item>Follow-up</item><item>Call</item><item>Meeting</item><item>Viewing</item><item>Email</item>
+    </string-array>
+    <string-array name="recurrences">
+        <item>Never</item><item>Daily</item><item>Weekly</item><item>Monthly</item>
+    </string-array>
+    <string-array name="viewing_statuses">
+        <item>Scheduled</item><item>Completed</item><item>Cancelled</item><item>No show</item>
+    </string-array>
+    <string-array name="themes">
+        <item>System default</item><item>Light</item><item>Dark</item>
+    </string-array>
+    <string-array name="currencies">
+        <item>PKR — Pakistani Rupee</item>
+        <item>USD — US Dollar</item>
+        <item>EUR — Euro</item>
+        <item>GBP — British Pound</item>
+        <item>AED — UAE Dirham</item>
+        <item>SAR — Saudi Riyal</item>
+        <item>INR — Indian Rupee</item>
+        <item>CAD — Canadian Dollar</item>
+        <item>AUD — Australian Dollar</item>
+    </string-array>
+</resources>
