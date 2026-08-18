@@ -107,25 +107,37 @@ def b64_sha256(data: bytes) -> str:
 
 
 def sign_v1_entries(entries):
-    """entries: dict path -> bytes (only regular files, no META-INF)."""
-    lines = ["Manifest-Version: 1.0", "Created-By: EstateDesk", "", ""]
+    """entries: dict path -> bytes (only regular files, no META-INF).
+
+    JAR signing per the JAR File Specification: lines are CRLF-terminated,
+    each entry section ends with a blank line, and the main attribute
+    section is followed by a blank line before the first entry.
+    """
     sections = {}
     for path in sorted(entries):
         digest = b64_sha256(entries[path])
-        section = f"Name: {path}\r\nSHA-256-Digest: {digest}\r\n\r\n"
-        lines.append(section)
-        sections[path] = section
-    manifest = "".join(lines).encode("utf-8")
+        # section bytes as the Java Manifest parser will read them back:
+        # "Name: ...\r\n<attrs>\r\n" + terminating blank line "\r\n"
+        sections[path] = f"Name: {path}\r\nSHA-256-Digest: {digest}\r\n\r\n"
+    manifest = (
+        "Manifest-Version: 1.0\r\n"
+        "Created-By: EstateDesk\r\n"
+        "\r\n" + "".join(sections.values())
+    ).encode("utf-8")
 
-    sf_lines = [
-        "Signature-Version: 1.0",
-        "Created-By: EstateDesk",
-        f"SHA-256-Digest-Manifest: {b64_sha256(manifest)}",
-        "",
-    ]
+    sf_body = (
+        "Signature-Version: 1.0\r\n"
+        "Created-By: EstateDesk\r\n"
+        f"SHA-256-Digest-Manifest: {b64_sha256(manifest)}\r\n"
+        "\r\n"
+    )
     for path in sorted(sections):
-        sf_lines.append(f"Name: {path}\r\nSHA-256-Digest: {b64_sha256(sections[path].encode('utf-8'))}\r\n\r\n")
-    sf = "".join(sf_lines).encode("utf-8")
+        sf_body += (
+            f"Name: {path}\r\n"
+            f"SHA-256-Digest: {b64_sha256(sections[path].encode('utf-8'))}\r\n"
+            "\r\n"
+        )
+    sf = sf_body.encode("utf-8")
 
     sig = (
         pkcs7.PKCS7SignatureBuilder()
@@ -174,8 +186,12 @@ def build_v2_signer_block(cert_der: bytes, key, digests_block: bytes):
     public_key_der = key.public_key().public_bytes(
         serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
 
+    # Per AOSP's V2SchemeVerifier (what Android itself runs):
+    #   signer    = lp(signed_data) || lp(signatures) || lp(public key SPKI)
+    #   pair value = lp( sequence of lp(signer) )   ← double length prefix
+    # The public key IS length-prefixed (readLengthPrefixedByteArray in AOSP).
     signer = len_prefixed(signed_data) + len_prefixed(signatures_block) + len_prefixed(public_key_der)
-    return len_prefixed(signer)
+    return len_prefixed(len_prefixed(signer))
 
 
 def build_apk_signing_block(v2_value: bytes) -> bytes:
@@ -258,10 +274,18 @@ def verify_v2(path: str) -> bool:
         (n,) = struct.unpack("<I", buf[pos: pos + 4])
         return buf[pos + 4: pos + 4 + n], pos + 4 + n
 
-    signer, _ = read_lp(signers, 0)
+    # pair value = [len] sequence of [len] signer
+    signers_seq, _ = read_lp(signers, 0)
+    signer, _ = read_lp(signers_seq, 0)
     sd, pos = read_lp(signer, 0)
     sigs, pos = read_lp(signer, pos)
-    pub, _ = read_lp(signer, pos)
+    pub, _ = read_lp(signer, pos)  # length-prefixed SubjectPublicKeyInfo DER
+    # structural check: public key must be a parseable SPKI DER
+    try:
+        serialization.load_der_public_key(pub)
+    except Exception as e:
+        print("VERIFY: public key malformed:", e)
+        return False
 
     digests, p = read_lp(sd, 0)
     certs, _ = read_lp(sd, p)
